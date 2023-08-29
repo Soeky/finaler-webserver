@@ -211,12 +211,12 @@ void loop() {
 
 //byte array for ALIV_CLMP_STAT_MOTBK_2010(23)
 byte ALIV_CLMP_STAT[] = {0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0};
-
+//counter for ALIV_CLMP_STAT
+int z = 0;
 void sendKlemmeOff() {
     if (DEBUG) {
         Serial.println("Sending klemme off");
     }
-    int z = 0;
     CAN_frame_t rx_frame;
     //receive next CAN frame from queue
     if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
@@ -266,7 +266,6 @@ void sendKlemmeOn() {
     if (DEBUG) {
         Serial.println("Sending klemme on");
     }
-    int z = 0;
     CAN_frame_t rx_frame;
     //receive next CAN frame from queue
     if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
@@ -314,11 +313,12 @@ void sendKlemmeOn() {
 byte ALIV_ENGDAT[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E};
 
 //send RPM
+byte eight_lsb_rpm = 0x00;
+byte four_msb_rpm = 0x00;
 void sendRpm() {
     if (DEBUG) {
         Serial.println("Sending rpm");
     }
-    int z = 0;
     CAN_frame_t rx_frame;
     //receive next CAN frame from queue
     if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 3 * portTICK_PERIOD_MS) == pdTRUE) {
@@ -344,8 +344,8 @@ void sendRpm() {
         rx_frame.FIR.B.DLC = 8;
         rx_frame.data.u8[0] = 0x46;   //byte 0  CRC_ENGDAT_2_MOTBK_2010 (24)
         rx_frame.data.u8[1] = ALIV_ENGDAT[z];   //byte 1  ST_SDST_MOTBK_2010 (22) ST_KL_50_MOTBK_2010 (23) ALIV_ENGDAT_2_MOTBK_2010 (23)
-        rx_frame.data.u8[2] = 0x00;   //byte 2  RPM_ENG_MOTBK_2010 (26)
-        rx_frame.data.u8[3] = 0x00;   //byte 3  BNK_ANG_MOTBK_2010 (24) RPM_ENG_MOTBK_2010 (26)
+        rx_frame.data.u8[2] = eight_lsb_rpm;   //byte 2  RPM_ENG_MOTBK_2010 (26)
+        rx_frame.data.u8[3] = four_msb_rpm;   //byte 3  BNK_ANG_MOTBK_2010 (24) RPM_ENG_MOTBK_2010 (26)
         rx_frame.data.u8[4] = 0x80;   //byte 4  BNK_ANG_MOTBK_2010 (24)
         rx_frame.data.u8[5] = 0x00;   //byte 5  ANG_THVA_MOTBK_2010 (24)
         rx_frame.data.u8[6] = 0x6A;   //byte 6  ST_SW_BOOT_MOTBK_2010 (22) ST_CR_MOTBK_2010 (24) ST_SEN_OVTU_MOTBK_2010 (23) ST_EMOFF_MOTBK_2010 (24)
@@ -361,7 +361,10 @@ void sendRpm() {
         z++;
     } else { z = 0; }
 }
-
+byte four_lsb_RR = 0x00;
+byte eight_msb_RR = 0x00;
+byte eight_lsb_FT = 0x00;
+byte four_msb_FT = 0x00;
 //send Speed
 void sendSpeed() {
     if (DEBUG) {
@@ -391,10 +394,10 @@ void sendSpeed() {
         rx_frame.MsgID = 1;
         rx_frame.FIR.B.DLC = 8;
         rx_frame.data.u8[0] = 0x14;   //byte 0 CRC_V_MOTBK_2010
-        rx_frame.data.u8[1] = 0x00;   //byte 1 V_WHL_RR_MOTBK_2010 (27) ALIV_V_MOTBK_2010 (23)
-        rx_frame.data.u8[2] = 0x00;   //byte 2 V_WHL_RR_MOTBK_2010 (27)
-        rx_frame.data.u8[3] = 0x00;   //byte 3 V_WHL_FT_MOTBK_2010 (27)
-        rx_frame.data.u8[4] = 0x00;   //byte 4 ST_BRK_FT_MOTBK_2010 (24) ST_BRK_RR_MOTBK_2010 (24) V_WHL_FT_MOTBK_2010 (27)
+        rx_frame.data.u8[1] = four_lsb_RR | ALIV_ENGDAT[z];   //byte 1 V_WHL_RR_MOTBK_2010 (27) ALIV_V_MOTBK_2010 (23)
+        rx_frame.data.u8[2] = eight_msb_RR;   //byte 2 V_WHL_RR_MOTBK_2010 (27)
+        rx_frame.data.u8[3] = eight_lsb_FT;   //byte 3 V_WHL_FT_MOTBK_2010 (27)
+        rx_frame.data.u8[4] = 0x50 | four_msb_FT;   //byte 4 ST_BRK_FT_MOTBK_2010 (24) ST_BRK_RR_MOTBK_2010 (24) V_WHL_FT_MOTBK_2010 (27)
         rx_frame.data.u8[5] = 0x15;   //byte 5 ST_ABS_MOTBK_2010 (24) ST_SEN_V_FT_MOTBK_2010 (23) ST_SEN_V_RR_MOTBK_2010 (23)
         rx_frame.data.u8[6] = 0xA9;   //byte 6 ST_STASS_MOTBK_2010 (24) MOD_VEH_ABS_CHOV_MOTBK_2010 (26) MOD_VEH_ABS_ACV_MOTBK_2010 (28)
         rx_frame.data.u8[7] = 0x00;   //byte 7 CTR_WMOM_DBC_MOTBK_2010 (22) CTR_DBC_GRAD_MOTBK_2010 (22)
@@ -434,7 +437,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t) {
                 String CheckKlemme = doc["CheckKlemme"];
                 String CheckSpeed = doc["CheckSpeed"];
                 String CheckRpm = doc["CheckRpm"];
-                int Speed = doc["Speed"];
+                int Speed_RR = doc["Speed"];
+                int Speed_FT = doc["Speed"];
                 int Rpm = doc["Rpm"];
 
                 if (DEBUG) {
@@ -443,29 +447,44 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t) {
                     Serial.println(CheckKlemme);
                     Serial.println(CheckSpeed);
                     Serial.println(CheckRpm);
-                    Serial.println(Speed);
+                    Serial.println(Speed_RR);
                     Serial.println(Rpm);
-                    Serial.print("\n");
+                    //byte manipulation RPM
+                    Rpm /= 5;
+                    eight_lsb_rpm = (byte) Rpm;
+                    Rpm >>= 8;
+                    four_msb_rpm = (byte) Rpm;
+                    //byte manipulation speed RR
+                    Speed_RR *= 8;
+                    Speed_RR <<= 4;
+                    four_lsb_RR = (byte)Speed_RR;
+                    Speed_RR >>= 8;
+                    eight_msb_RR = (byte)Speed_RR;
+                    //byte manipulation speed FT
+                    Speed_FT *= 8;
+                    eight_lsb_FT = (byte) Speed_FT;
+                    Speed_FT >>= 8;
+                    four_msb_FT = (byte) Speed_FT;
 
                 }
                 unsigned long now = millis();
-                if ((unsigned long) (now - SensorUpdate_CAN) > 120) // 200 is interval for input update server
-                {
-                    if (CheckKlemme == "true") {
-                        if (status_klemme == "ON") {
-                            sendKlemmeOn();
-                        } else {
-                            sendKlemmeOff();
-                        }
-                    }
-                    if (CheckSpeed == "true") {
-                        sendSpeed();
-                    }
-                    if (CheckRpm == "true") {
-                        sendRpm();
-                    }
-                    SensorUpdate_CAN = now;
-                }
+//                if ((unsigned long) (now - SensorUpdate_CAN) > 120) // 200 is interval for input update server
+//                {
+//                    if (CheckKlemme == "true") {
+//                        if (status_klemme == "ON") {
+//                            sendKlemmeOn();
+//                        } else {
+//                            sendKlemmeOff();
+//                        }
+//                    }
+//                    if (CheckSpeed == "true") {
+//                        sendSpeed();
+//                    }
+//                    if (CheckRpm == "true") {
+//                        sendRpm();
+//                    }
+//                    SensorUpdate_CAN = now;
+//                }
 
             }
             break;
