@@ -25,14 +25,14 @@ unsigned long SensorUpdate_CAN = 0;
 bool DEBUG = true;
 
 //Uncomment for expleo
-//#define EAP_IDENTITY "Syildirim" // most of the time same as Username
-//#define EAP_USERNAME "Syildirim" // Expleo username
-//#define EAP_PASSWORD "Nemyes61!" // Expleo password
+//#define EAP_IDENTITY "Username" // most of the time same as Username
+//#define EAP_USERNAME "Username" // Expleo username
+//#define EAP_PASSWORD "Password" // Expleo password
 //const char *ssid = "ExpleoMobile";    // ssid of WiFi source
 int counter = 0;
 
-const char *ssid = "FRITZ!Box 7560 OF";
-const char *password = "Trabzon61";
+const char *ssid = "ESSID";
+const char *password = "Passowrd";
 
 
 //compressed html webpage
